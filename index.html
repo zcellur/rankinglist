@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>挂图作战 · 再接再厉榜</title>
+<style>
+  :root {
+    --bg-0: #08142a;
+    --bg-1: #0c2140;
+    --bg-2: #0a1a33;
+    --card-bg: rgba(255, 255, 255, 0.045);
+    --card-border: rgba(125, 165, 255, 0.22);
+    --text: #eaf1ff;
+    --text-dim: #9fb3d1;
+    --gold: #e8c15a;
+    --gold-soft: #f5d67b;
+    --blue: #4c7dff;
+    --r1: #ff5f56;
+    --r2: #ff9f43;
+    --r3: #ffd166;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Source Han Sans SC", "Segoe UI", sans-serif;
+    color: var(--text);
+    background: radial-gradient(1200px 700px at 50% -10%, #16305f 0%, transparent 55%),
+                radial-gradient(900px 600px at 90% 110%, #122a52 0%, transparent 50%),
+                linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 52%, var(--bg-2) 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* 网格底纹 */
+  .grid-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(120, 160, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120, 160, 255, 0.06) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
+  }
+
+  .wrap {
+    position: relative;
+    width: min(1280px, 94vw);
+    margin: 0 auto;
+    padding: 28px 0 40px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== 顶部 ===== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 22px 30px;
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    background: linear-gradient(120deg, rgba(24, 47, 88, 0.72), rgba(12, 32, 64, 0.55));
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .topbar::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--gold), #a97e2a);
+  }
+  .crest {
+    flex: 0 0 auto;
+    width: 62px; height: 62px;
+    color: var(--gold);
+    filter: drop-shadow(0 0 14px rgba(232, 193, 90, 0.4));
+  }
+  .crest svg { width: 100%; height: 100%; display: block; }
+  .titles { flex: 1; min-width: 0; }
+  .titles h1 {
+    display: inline-block;
+    max-width: 100%;
+    font-size: clamp(26px, 4vw, 40px);
+    letter-spacing: 6px;
+    font-weight: 800;
+    background: linear-gradient(180deg, #ffffff 20%, var(--gold-soft) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.15;
+  }
+  .titles .squad {
+    margin-top: 8px;
+    font-size: clamp(14px, 2vw, 17px);
+    letter-spacing: 3px;
+    color: var(--text-dim);
+  }
+  .updated {
+    flex: 0 0 auto;
+    text-align: right;
+    font-size: 13px;
+    color: var(--text-dim);
+    border-left: 1px solid rgba(255,255,255,0.12);
+    padding-left: 22px;
+  }
+  .updated b {
+    display: block;
+    font-size: 15px;
+    color: var(--gold-soft);
+    font-weight: 600;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== 两张仪表盘 ===== */
+  .dashboards {
+    margin-top: 26px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 26px;
+    flex: 1;
+  }
+
+  .board {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(20, 42, 80, 0.55), rgba(10, 27, 53, 0.75));
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.38);
+    overflow: hidden;
+  }
+
+  .board-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px 24px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    position: relative;
+  }
+  .board-head::after {
+    content: "";
+    position: absolute;
+    left: 24px; right: 24px; bottom: -1px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    opacity: .5;
+  }
+  .board-icon {
+    flex: 0 0 auto;
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+  }
+  .board-icon svg { width: 30px; height: 30px; display: block; }
+  .board.physical .board-icon { background: linear-gradient(140deg, #2f6bff, #1c3f9e); }
+  .board.internal .board-icon { background: linear-gradient(140deg, #f0a53b, #c97a1c); }
+
+  .board-title { min-width: 0; flex: 1; }
+  .board-title h2 {
+    display: inline-block;
+    max-width: 100%;
+    font-size: clamp(20px, 2.6vw, 27px);
+    letter-spacing: 3px;
+    font-weight: 700;
+  }
+  .board-title p {
+    display: inline-block;
+    max-width: 100%;
+    margin-top: 5px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+  }
+
+  /* ===== 可编辑文字 ===== */
+  .editable {
+    position: relative;
+    cursor: text;
+    border-radius: 6px;
+    transition: box-shadow .15s ease;
+  }
+  .editable:hover { box-shadow: 0 0 0 1px dashed rgba(232, 193, 90, 0.55); }
+  .editable::after {
+    content: "";
+    position: absolute;
+    top: -6px; right: -10px;
+    width: 14px; height: 14px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e8c15a' d='M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z'/%3E%3C/svg%3E") center/contain no-repeat;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+  }
+  .editable:hover::after { opacity: 1; }
+
+  .edit-input {
+    font: inherit;
+    letter-spacing: inherit;
+    color: var(--text);
+    -webkit-text-fill-color: var(--text);
+    background: rgba(4, 12, 28, 0.55);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    outline: none;
+    padding: 2px 10px;
+    min-width: 180px;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ===== 排名列表 ===== */
+  .rank-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 22px 24px;
+  }
+
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s ease, background .2s ease;
+  }
+  .rank-item:hover { transform: translateY(-2px); background: rgba(255,255,255,0.055); }
+  .rank-item::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+  }
+
+  .rank-no {
+    flex: 0 0 auto;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: #0a1a33;
+    background: var(--r3);
+  }
+
+  .rank-meta { flex: 1; min-width: 0; }
+  .rank-name {
+    font-size: clamp(20px, 2.4vw, 26px);
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+  .rank-sub {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  .rank-sub .rank-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .rank-score {
+    flex: 0 0 auto;
+    text-align: right;
+  }
+  .rank-score .num {
+    font-size: clamp(26px, 3.4vw, 34px);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .rank-score .unit { font-size: 14px; color: var(--text-dim); margin-left: 2px; }
+
+  /* 排名配色 */
+  .rank-item.r1 { background: rgba(255, 95, 86, 0.08); border-color: rgba(255, 95, 86, 0.28); }
+  .rank-item.r1::before { background: var(--r1); }
+  .rank-item.r1 .rank-no { background: var(--r1); color: #fff; }
+  .rank-item.r1 .rank-score .num { color: var(--r1); }
+  .rank-item.r1 .rank-badge { background: rgba(255, 95, 86, 0.16); color: #ffb4b0; }
+
+  .rank-item.r2 { background: rgba(255, 159, 67, 0.08); border-color: rgba(255, 159, 67, 0.26); }
+  .rank-item.r2::before { background: var(--r2); }
+  .rank-item.r2 .rank-no { background: var(--r2); color: #fff; }
+  .rank-item.r2 .rank-score .num { color: var(--r2); }
+  .rank-item.r2 .rank-badge { background: rgba(255, 159, 67, 0.16); color: #ffd0a3; }
+
+  .rank-item.r3 { background: rgba(255, 209, 102, 0.07); border-color: rgba(255, 209, 102, 0.24); }
+  .rank-item.r3::before { background: var(--r3); }
+  .rank-item.r3 .rank-no { background: var(--r3); color: #0a1a33; }
+  .rank-item.r3 .rank-score .num { color: var(--r3); }
+  .rank-item.r3 .rank-badge { background: rgba(255, 209, 102, 0.15); color: #ffe3a1; }
+
+  /* ===== 空数据 ===== */
+  .empty {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 30px;
+    text-align: center;
+  }
+  .empty .box {
+    border: 1px dashed rgba(255,255,255,0.18);
+    border-radius: 16px;
+    padding: 40px 34px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+  .empty .box b { display: block; font-size: 19px; color: var(--text); margin-bottom: 8px; letter-spacing: 3px; }
+
+  /* ===== 错误 ===== */
+  .error {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    border: 1px dashed rgba(255, 95, 86, 0.4);
+    border-radius: 18px;
+  }
+
+  footer {
+    position: relative;
+    text-align: center;
+    margin-top: 26px;
+    font-size: 12.5px;
+    color: rgba(159, 179, 209, 0.75);
+    letter-spacing: 2px;
+    padding: 0 10px 8px;
+  }
+  .foot-tools {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .foot-tools .hint { color: rgba(159, 179, 209, 0.85); }
+  .btn-reset, .btn-lock {
+    background: rgba(232, 193, 90, 0.06);
+    border: 1px solid rgba(232, 193, 90, 0.45);
+    color: var(--gold-soft);
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 5px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  .btn-reset:hover { background: rgba(232, 193, 90, 0.16); }
+  .btn-lock {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: var(--text-dim);
+  }
+  .btn-lock:hover { background: rgba(255, 255, 255, 0.08); }
+
+  /* ===== 密码弹窗 ===== */
+  .pwd-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 10, 22, 0.72);
+    backdrop-filter: blur(3px);
+    display: grid;
+    place-items: center;
+    z-index: 60;
+    padding: 20px;
+  }
+  .pwd-overlay[hidden] { display: none; }
+  .pwd-dialog {
+    width: min(380px, 92vw);
+    background: linear-gradient(160deg, #142a52, #0c1d3a);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 26px 28px 22px;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  }
+  .pwd-title { font-size: 17px; letter-spacing: 3px; margin-bottom: 16px; }
+  .pwd-input {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(125, 165, 255, 0.35);
+    background: rgba(4, 12, 28, 0.55);
+    color: var(--text);
+    outline: none;
+    letter-spacing: 3px;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  .pwd-input:focus { border-color: var(--gold); }
+  .pwd-error { min-height: 18px; margin-top: 8px; font-size: 13px; color: #ff8a85; letter-spacing: 1px; }
+  .pwd-btns { display: flex; gap: 12px; margin-top: 14px; }
+  .pwd-btn {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dim);
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+  .pwd-btn:hover { filter: brightness(1.15); }
+  .pwd-btn.primary {
+    background: linear-gradient(140deg, #d8a93e, #b98a2a);
+    border-color: transparent;
+    color: #0a1a33;
+    font-weight: 700;
+  }
+  .shake { animation: pwdshake .35s ease; }
+  @keyframes pwdshake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+  }
+
+  @media (max-width: 820px) {
+    .dashboards { grid-template-columns: 1fr; }
+    .topbar { flex-wrap: wrap; }
+    .updated { border-left: 0; padding-left: 0; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-layer"></div>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="crest" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2 L20 5 V11 C20 16.6 16.6 20.7 12 22 C7.4 20.7 4 16.6 4 11 V5 Z"
+              fill="currentColor" opacity="0.22"/>
+        <path d="M12 3 L18.8 5.6 V11 C18.8 15.9 15.9 19.4 12 20.6 C8.1 19.4 5.2 15.9 5.2 11 V5.6 Z"
+              fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M12 8.4 L13.05 10.9 L15.7 11 L13.7 12.65 L14.35 15.3 L12 13.8 L9.65 15.3 L10.3 12.65 L8.3 11 L10.95 10.9 Z"
+              fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="titles">
+      <h1 id="mainTitle">挂图作战 · 再接再厉榜</h1>
+      <p class="squad" id="squad">2024级本科治安学五区队</p>
+    </div>
+    <div class="updated">
+      数据更新时间
+      <b id="updatedAt">—</b>
+    </div>
+  </header>
+
+  <main class="dashboards" id="dashboards"></main>
+
+  <footer>
+    <div>数据更新：替换文件夹内 Excel 文件后，双击「更新数据.bat」并刷新本页</div>
+    <div class="foot-tools">
+      <span class="hint" id="editHint">提示：修改文字需要输入密码</span>
+      <button id="btnLock" type="button" class="btn-lock" hidden>立即锁定</button>
+      <button id="btnReset" type="button" class="btn-reset">恢复默认文字</button>
+    </div>
+  </footer>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div class="pwd-overlay" id="pwdOverlay" hidden>
+  <div class="pwd-dialog" id="pwdDialog">
+    <div class="pwd-title">请输入修改密码</div>
+    <input type="password" id="pwdInput" class="pwd-input" placeholder="请输入密码" autocomplete="off">
+    <div class="pwd-error" id="pwdError"></div>
+    <div class="pwd-btns">
+      <button type="button" id="pwdCancel" class="pwd-btn">取消</button>
+      <button type="button" id="pwdOk" class="pwd-btn primary">确定</button>
+    </div>
+  </div>
+</div>
+
+<script src="site-config.js"></script>
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var DEFAULTS = {
+    mainTitle: "挂图作战 · 再接再厉榜",
+    squad: "2024级本科治安学五区队",
+    physicalTitle: "体能再接再厉榜",
+    physicalSubtitle: "体测总成绩 · 后三名",
+    internalTitle: "内务再接再厉榜",
+    internalSubtitle: "内务考核总分 · 后三名"
+  };
+  var FILE = window.SITE_CONFIG || {};
+
+  /* 保存用户在网页上的修改：优先 localStorage，不可用时退化为内存 */
+  var mem = {};
+  var LS = null;
+  try { localStorage.setItem("__t", "1"); localStorage.removeItem("__t"); LS = localStorage; } catch (e) {}
+  var storeKey = "zzjl-board-cfg|" + location.pathname;
+  var saved = {};
+  try {
+    saved = LS ? (JSON.parse(LS.getItem(storeKey) || "{}") || {}) : (mem[storeKey] || {});
+  } catch (e) { saved = {}; }
+
+  function persist() {
+    if (LS) { try { LS.setItem(storeKey, JSON.stringify(saved)); } catch (e) {} }
+    else { mem[storeKey] = saved; }
+  }
+
+  function cfg(key) {
+    var v = saved[key];
+    if (v != null && String(v).trim() !== "") return v;
+    v = FILE[key];
+    if (v != null && String(v).trim() !== "") return v;
+    return DEFAULTS[key];
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  /* ---------- 修改密码锁 ---------- */
+  var PWD = (FILE.editPassword != null) ? String(FILE.editPassword).trim() : "";
+  var locked = PWD !== "";
+  var UNLOCK_KEY = "zzjl-board-unlocked";
+  var unlocked = false;
+  try { unlocked = sessionStorage.getItem(UNLOCK_KEY) === "1"; } catch (e) {}
+
+  var hintEl = document.getElementById("editHint");
+  var lockBtnEl = document.getElementById("btnLock");
+
+  function updateLockUI() {
+    if (!locked) {
+      hintEl.textContent = "提示：点击标题文字即可直接修改，修改后自动保存";
+      lockBtnEl.hidden = true;
+    } else if (unlocked) {
+      hintEl.textContent = "编辑已解锁（关闭浏览器后自动锁定）";
+      lockBtnEl.hidden = false;
+    } else {
+      hintEl.textContent = "提示：修改文字需要输入密码";
+      lockBtnEl.hidden = true;
+    }
+  }
+  function setUnlocked(v) {
+    unlocked = v;
+    try { if (v) sessionStorage.setItem(UNLOCK_KEY, "1"); else sessionStorage.removeItem(UNLOCK_KEY); } catch (e) {}
+    updateLockUI();
+  }
+
+  var pwdOverlay = document.getElementById("pwdOverlay");
+  var pwdInput = document.getElementById("pwdInput");
+  var pwdError = document.getElementById("pwdError");
+  var pwdDialog = document.getElementById("pwdDialog");
+  var pendingCb = null;
+
+  function askPassword(cb) {
+    pendingCb = cb;
+    pwdInput.value = "";
+    pwdError.textContent = "";
+    pwdOverlay.hidden = false;
+    pwdInput.focus();
+  }
+  function closePassword() {
+    pwdOverlay.hidden = true;
+    var cb = pendingCb; pendingCb = null;
+    if (cb) cb(false);
+  }
+  function confirmPassword() {
+    if (pwdInput.value === PWD) {
+      pwdOverlay.hidden = true;
+      var cb = pendingCb; pendingCb = null;
+      if (cb) cb(true);
+    } else {
+      pwdError.textContent = "密码错误，请重试";
+      pwdDialog.classList.remove("shake");
+      void pwdDialog.offsetWidth;
+      pwdDialog.classList.add("shake");
+      pwdInput.select();
+    }
+  }
+  document.getElementById("pwdOk").addEventListener("click", confirmPassword);
+  document.getElementById("pwdCancel").addEventListener("click", closePassword);
+  pwdInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") confirmPassword();
+    else if (e.key === "Escape") closePassword();
+  });
+
+  /* 需要密码的操作统一走这里 */
+  function withAuth(fn) {
+    if (locked && !unlocked) {
+      askPassword(function (ok) { if (ok) { setUnlocked(true); fn(); } });
+    } else {
+      fn();
+    }
+  }
+
+  lockBtnEl.addEventListener("click", function () { setUnlocked(false); });
+  updateLockUI();
+
+  /* ---------- 点击编辑文字 ---------- */
+  function openEditor(el, key) {
+    if (el.querySelector(".edit-input")) return;
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "edit-input";
+    input.value = cfg(key);
+    el.textContent = "";
+    el.appendChild(input);
+    input.focus();
+    input.select();
+    var done = false;
+    function finish(save) {
+      if (done) return;
+      done = true;
+      var v = input.value.replace(/^\s+|\s+$/g, "");
+      var fallback = (FILE[key] != null && String(FILE[key]).trim() !== "") ? FILE[key] : DEFAULTS[key];
+      if (v === "") v = fallback;
+      el.textContent = v;
+      if (save) {
+        if (v === fallback) { delete saved[key]; }
+        else { saved[key] = v; }
+        persist();
+        if (key === "mainTitle") document.title = v;
+      }
+    }
+    input.addEventListener("blur", function () { finish(true); });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") finish(true);
+      else if (e.key === "Escape") finish(false);
+    });
+  }
+
+  function makeEditable(el, key) {
+    if (!el) return;
+    el.classList.add("editable");
+    el.setAttribute("title", "点击修改文字");
+    el.addEventListener("click", function () {
+      withAuth(function () { openEditor(el, key); });
+    });
+  }
+
+  /* ---------- 页面主体 ---------- */
+  var D = window.DASHBOARD_DATA;
+  var root = document.getElementById("dashboards");
+  var updatedEl = document.getElementById("updatedAt");
+  var mainTitleEl = document.getElementById("mainTitle");
+  var squadEl = document.getElementById("squad");
+
+  mainTitleEl.textContent = cfg("mainTitle");
+  document.title = cfg("mainTitle");
+  squadEl.textContent = cfg("squad");
+  makeEditable(mainTitleEl, "mainTitle");
+  makeEditable(squadEl, "squad");
+
+  document.getElementById("btnReset").addEventListener("click", function () {
+    withAuth(function () {
+      saved = {};
+      if (LS) { try { LS.removeItem(storeKey); } catch (e) {} }
+      else { delete mem[storeKey]; }
+      location.reload();
+    });
+  });
+
+  if (!D) {
+    root.innerHTML = '<div class="error">未找到数据文件 data.js<br>请先双击「更新数据.bat」生成数据后再打开本页。</div>';
+    return;
+  }
+  updatedEl.textContent = D.updatedAt || "—";
+
+  var ICONS = {
+    physical: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="8" width="3" height="8" rx="1"/><rect x="19" y="8" width="3" height="8" rx="1"/><rect x="5.2" y="10.4" width="13.6" height="3.2" rx="1.6"/><rect x="7" y="7.4" width="2" height="9.2" rx="1"/><rect x="15" y="7.4" width="2" height="9.2" rx="1"/></svg>',
+    internal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3 L19 6 V11 C19 15.8 16.4 19.3 12 21 C7.6 19.3 5 15.8 5 11 V6 Z"/><path d="M9 12 L11.2 14.2 L15.4 9.8" stroke-width="2" stroke-linecap="round"/></svg>'
+  };
+
+  var boards = [
+    { key: "physical", data: D.physical, tKey: "physicalTitle", sKey: "physicalSubtitle" },
+    { key: "internal", data: D.internal, tKey: "internalTitle", sKey: "internalSubtitle" }
+  ];
+  var medals = ["倒数第1名", "倒数第2名", "倒数第3名"];
+  var rankCls = ["r1", "r2", "r3"];
+
+  boards.forEach(function (b) {
+    var board = document.createElement("section");
+    board.className = "board " + b.key;
+
+    var head = document.createElement("div");
+    head.className = "board-head";
+
+    var icon = document.createElement("div");
+    icon.className = "board-icon";
+    icon.innerHTML = ICONS[b.key];
+    head.appendChild(icon);
+
+    var twrap = document.createElement("div");
+    twrap.className = "board-title";
+    var h2 = document.createElement("h2");
+    h2.textContent = cfg(b.tKey);
+    makeEditable(h2, b.tKey);
+    var sub = document.createElement("p");
+    sub.textContent = cfg(b.sKey);
+    makeEditable(sub, b.sKey);
+    twrap.appendChild(h2);
+    twrap.appendChild(sub);
+    head.appendChild(twrap);
+    board.appendChild(head);
+
+    if (!b.data || !b.data.hasData || !b.data.students || !b.data.students.length) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      empty.innerHTML = '<div class="box"><b>成绩尚未录入</b>请先填写 Excel 中的考核成绩，<br>再运行「更新数据.bat」即可上榜。</div>';
+      board.appendChild(empty);
+    } else {
+      var list = document.createElement("div");
+      list.className = "rank-list";
+      var unit = (b.data && b.data.unit) || "分";
+      b.data.students.forEach(function (s, i) {
+        var item = document.createElement("div");
+        item.className = "rank-item " + (rankCls[i] || "r3");
+        item.innerHTML =
+          '<div class="rank-no">' + (i + 1) + "</div>" +
+          '<div class="rank-meta">' +
+            '<div class="rank-name">' + esc(s.name) + "</div>" +
+            '<div class="rank-sub"><span class="rank-badge">' + esc(medals[i] || ("倒数第" + (i + 1) + "名")) + "</span>　学号 " + esc(s.id) + "</div>" +
+          "</div>" +
+          '<div class="rank-score"><span class="num">' + esc(s.score) + '</span><span class="unit">' + esc(unit) + "</span></div>";
+        list.appendChild(item);
+      });
+      board.appendChild(list);
+    }
+
+    root.appendChild(board);
+  });
+})();
+</script>
+</body>
+</html>
